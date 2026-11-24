@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sorties autour de Saint-James</title>
+<style>
+:root{--bg:#f7f5f0;--card:#fff;--tx:#1d2420;--mu:#6a746d;--ac:#2f6f5e;--bd:#e2ddd2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151a17;--card:#1f2622;--tx:#eef1ee;--mu:#9aa59e;--ac:#6fc2a8;--bd:#313a35;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151a17;--card:#1f2622;--tx:#eef1ee;--mu:#9aa59e;--ac:#6fc2a8;--bd:#313a35;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.4}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:4px 0 2px}
+.sub{color:var(--mu);font-size:.9rem;margin:0 0 14px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
+.chip{flex:none;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:999px;padding:7px 13px;font-size:.9rem;cursor:pointer}
+.chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:10px 0}
+.card h3{margin:0 0 4px;font-size:1.05rem}
+.meta{color:var(--mu);font-size:.85rem}
+.row{display:flex;gap:10px;align-items:center;margin-top:10px}
+a.go,button.fav{font-size:.88rem;border:1px solid var(--bd);background:none;color:var(--ac);border-radius:8px;padding:6px 10px;text-decoration:none;cursor:pointer}
+button.fav.on{background:var(--ac);color:#fff}
+details{margin-top:18px}
+summary{cursor:pointer;color:var(--ac)}
+input,select{width:100%;padding:9px;margin:6px 0;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font-size:1rem}
+.add{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:10px 14px;font-size:1rem;cursor:pointer}
+.note{color:var(--mu);font-size:.8rem;margin-top:18px}
+</style>
+</head>
+<body>
+<main>
+<h1>Quoi faire autour de Saint-James ?</h1>
+<p class="sub">Idées de sorties dans le sud Manche et les environs.</p>
+<div class="chips" id="cities"></div>
+<div class="chips" id="cats"></div>
+<div id="list"></div>
+<details>
+<summary>+ Ajouter un lieu</summary>
+<input id="n" placeholder="Nom du lieu">
+<input id="v" placeholder="Ville">
+<select id="c"><option>Patrimoine</option><option>Nature</option><option>Culture</option><option>Famille</option><option>Gourmandise</option><option>Restos</option><option>Événements</option></select>
+<input id="d" placeholder="Description courte">
+<button class="add" id="addb">Ajouter</button>
+</details>
+<p class="note">Liste de départ à vérifier : horaires et tarifs peuvent changer. Les lieux ajoutés restent sur cet appareil.</p>
+</main>
+<script>
+var BASE=[
+{n:"Cimetière américain de Bretagne",v:"Saint-James",c:"Patrimoine",d:"Mémorial de la Seconde Guerre mondiale, à deux pas de chez toi."},
+{n:"Mont-Saint-Michel",v:"Mont-Saint-Michel",c:"Patrimoine",d:"L’abbaye et la baie, incontournables. Pars tôt pour éviter la foule."},
+{n:"Baie du Mont-Saint-Michel",v:"Pontorson",c:"Nature",d:"Balades et traversées guidées de la baie, à faire avec un guide."},
+{n:"Château de Fougères",v:"Fougères",c:"Patrimoine",d:"Grande forteresse médiévale, avec une ville haute à explorer."},
+{n:"Forêt de Fougères",v:"Fougères",c:"Nature",d:"Promenades et randonnées en forêt."},
+{n:"Jardin des plantes",v:"Avranches",c:"Nature",d:"Jardin avec vue sur la baie du Mont-Saint-Michel."},
+{n:"Scriptorial",v:"Avranches",c:"Culture",d:"Musée des manuscrits du Mont-Saint-Michel."},
+{n:"Cathédrale Saint-Samson",v:"Dol-de-Bretagne",c:"Patrimoine",d:"Imposante cathédrale gothique au cœur de la petite cité."},
+{n:"Mont-Dol",v:"Dol-de-Bretagne",c:"Famille",d:"Butte avec vue sur la baie, balade facile avec les enfants."},
+{n:"Jardin des plantes (balade en famille)",v:"Avranches",c:"Famille",d:"Espace calme et ouvert, idéal pour une sortie avec les enfants."}
+];
+var st={city:"Toutes",cat:"Toutes"},favs=[],extra=[];
+try{favs=JSON.parse(localStorage.getItem("favs")||"[]");extra=JSON.parse(localStorage.getItem("extra")||"[]")}catch(e){}
+function save(){try{localStorage.setItem("favs",JSON.stringify(favs));localStorage.setItem("extra",JSON.stringify(extra))}catch(e){}}
+function all(){return BASE.concat(extra)}
+function chips(id,key,vals){var el=document.getElementById(id);el.innerHTML="";["Toutes"].concat(vals).forEach(function(x){var b=document.createElement("button");b.className="chip"+(st[key]===x?" on":"");b.textContent=(x==="Toutes"?(key==="city"?"Toutes les villes":"Toutes catégories"):x);b.onclick=function(){st[key]=x;render()};el.appendChild(b)})}
+function uniq(k){var s=[];all().forEach(function(p){if(s.indexOf(p[k])<0)s.push(p[k])});return s}
+function render(){
+chips("cities","city",uniq("v"));chips("cats","cat",uniq("c"));
+var l=document.getElementById("list");l.innerHTML="";
+all().filter(function(p){return(st.city==="Toutes"||p.v===st.city)&&(st.cat==="Toutes"||p.c===st.cat)}).forEach(function(p){
+var d=document.createElement("div");d.className="card";
+var on=favs.indexOf(p.n)>=0;
+d.innerHTML="<h3></h3><div class='meta'></div><p></p><div class='row'><a class='go' target='_blank' rel='noopener'>Itinéraire</a><button class='fav"+(on?" on":"")+"'>"+(on?"★ Favori":"☆ Favori")+"</button></div>";
+d.querySelector("h3").textContent=p.n;
+d.querySelector(".meta").textContent=p.v+" · "+p.c;
+d.querySelector("p").textContent=p.d;
+d.querySelector("a").href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.n+" "+p.v);
+d.querySelector("button").onclick=function(){var i=favs.indexOf(p.n);if(i<0)favs.push(p.n);else favs.splice(i,1);save();render()};
+l.appendChild(d)})}
+document.getElementById("addb").onclick=function(){
+var n=document.getElementById("n").value.trim(),v=document.getElementById("v").value.trim();
+if(!n||!v)return;
+extra.push({n:n,v:v,c:document.getElementById("c").value,d:document.getElementById("d").value.trim()});
+save();document.getElementById("n").value="";document.getElementById("v").value="";document.getElementById("d").value="";render()};
+render();
+</script>
+</body>
+</html>
